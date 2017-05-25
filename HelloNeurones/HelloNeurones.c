@@ -1,65 +1,15 @@
 // HelloNeurones.cpp : Defines the entry point for the console application.
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <tchar.h>
-#include <stdarg.h>
-#include <math.h>
-#include <time.h>
 #include "HelloNeurones.h"
+#include "UnitTests.h"
 
 
-struct Neurone {
-	double(*sum)(int, double*);
-	double(*sigma)(double);
-	int nbIn;
-	Axone **e;
-	int nbOut;
-	Axone **s;
-};
 
-struct Axone {
-	double w;
-	Neurone *e;
-	Neurone *s;
-};
-
-struct Couche {
-	int depth;
-	int dim;
-	Neurone **n;
-};
-
-double randfrom(double min, double max)
-{
-	double range = (max - min);
-	double div = RAND_MAX / range;
-	return min + (rand() / div);
-}
-
-double** randWeights(int inDim, int outDim) {
-	double **res = malloc(sizeof(double*) * inDim);
-	for (int i = 0; i < inDim; i++) {
-		res[i] = malloc(sizeof(double) * outDim);
-		for (int j = 0; j < outDim; j++) {
-			res[i][j] = randfrom(0, 1);
-			printf("generated value %lf at coord %d : %d\n", res[i][j], i, j);
-		}
-	}
-	return res;
-}
 
 int main()
 {
-	srand(time(NULL));
-	double **test = randWeights(3, 4);
-	Couche *first = makeLayer(0, 3, sum, sigma);
-	Couche *second = makeLayer(1, 4, sum, sigma);
-	connLayers(test, first, second);
-
-	printf("Rand doubles[2][1] is %lf\n", test[2][1]);
-	printf("First layer's 3rd neuron connects to 2nd layer 2nd neuron with weight: %lf\n", first->n[2]->s[1]->w);
+	runTest();
 	getchar();
     return 0;
 }
@@ -78,24 +28,22 @@ double sigma(double sum) {
 	return 1 / (1 + exp(sum));
 }
 
-Axone*** connLayers(double **w, Couche* in, Couche* out) {
-	Axone ***res = malloc(sizeof(Axone**) * in->dim);
+Axon*** connLayers(double **w, Layer* in, Layer* out) {
+	Axon ***res = malloc(sizeof(Axon**) * in->dim);
 	// TODO: sanity check w array sizes vs in and out dimensions
 	for (int i = 0; i < in->dim; i++) {
-		res[i] = malloc(sizeof(Axone*) * out->dim);
+		res[i] = malloc(sizeof(Axon*) * out->dim);
 		for (int j = 0; j < out->dim; j++) {
-			printf("Axone du in %d au out %d a le poids %lf\n", i, j, w[i][j]);
 			res[i][j] = makeAxe(w[i][j], in->n[i], out->n[j]);
 		}
 	}
 	return res;
 }
 
-Couche* makeLayer(int depth, int dim, double(*sum)(int, double*), double(*sigma)(double)) {
-	Couche *c = malloc(sizeof(Couche));
-	c->depth = depth;
+Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double)) {
+	Layer *c = malloc(sizeof(Layer));
 	c->dim = dim;
-	Neurone **n = malloc(sizeof(Neurone*) * dim);
+	Neuron **n = malloc(sizeof(Neuron*) * dim);
 	for (int i = 0; i < dim; i++) {
 		n[i] = makeNeur(sum, sigma);
 	}
@@ -103,24 +51,24 @@ Couche* makeLayer(int depth, int dim, double(*sum)(int, double*), double(*sigma)
 	return c;
 }
 
-Axone* makeAxe(double w, Neurone* in, Neurone* out) {
-	Axone *a = malloc(sizeof(Axone));
+Axon* makeAxe(double w, Neuron* in, Neuron* out) {
+	Axon *a = malloc(sizeof(Axon));
 	a->w = w;
 	a->e = in;
 	a->s = out;
 	if (in) {
-		in->s = realloc(in->s, sizeof(Axone *) * ++(in->nbOut));
+		in->s = realloc(in->s, sizeof(Axon *) * ++(in->nbOut));
 		in->s[in->nbOut - 1] = a;
 	}
 	if (out) {
-		out->e = realloc(out->e, sizeof(Axone *) * ++(out->nbIn));
+		out->e = realloc(out->e, sizeof(Axon *) * ++(out->nbIn));
 		out->e[out->nbIn - 1] = a;
 	}
 	return a;
 }
 
-Neurone* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
-	Neurone *n = malloc(sizeof(Neurone));
+Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
+	Neuron *n = malloc(sizeof(Neuron));
 	n->sum = sum;
 	n->sigma = sigma;
 	n->e = NULL;
@@ -128,4 +76,27 @@ Neurone* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
 	n->s = NULL;
 	n->nbOut = 0;
 	return n;
+}
+
+Network* makeNet(int nbLayers, Layer **layers) {
+	Network *n = malloc(sizeof(Network));
+	n->layers = layers;
+	n->nbLayers = nbLayers;
+	return n;
+}
+
+double* feedVector(int vSize, double *v, Network *net) {
+	for (int i = 0; i < net->nbLayers; i++) {
+		int lSize = net->layers[i]->dim;
+		double *layerRes = malloc(sizeof(double) * lSize);
+		//pass values through this layer
+		for (int j = 0; j < lSize; j++) {
+			Neuron *n = net->layers[i]->n[j];
+			double sum = n->sum(vSize, v);
+			layerRes[j] = n->sigma(sum);
+		}
+		//var replacement makes it recursive?
+		v = layerRes;
+	}
+	return v;
 }

@@ -142,9 +142,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HelloNeurones.c" />
+    <ClCompile Include="UnitTests.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HelloNeurones.h" />
+    <ClInclude Include="UnitTests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
