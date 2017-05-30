@@ -8,6 +8,14 @@ double randfrom(double min, double max)
 	return min + (rand() / div);
 }
 
+double* randW(int dim) {
+	double *res = malloc(sizeof(double) * dim);
+	for (int i = 0; i < dim; i++) {
+		res[i] = randfrom(0, 1);
+	}
+	return res;
+}
+
 double** randWeights(int inDim, int outDim) {
 	double **res = malloc(sizeof(double*) * inDim);
 	for (int i = 0; i < inDim; i++) {
@@ -33,11 +41,13 @@ int testWeights(double **w, Layer *coucheFrom, Layer *coucheTo) {
 	return 0;
 }
 
-void runTest() {
+//make the run dynamic
+void runTest(/*int nb, int *dims*/) {
 	srand(time(NULL));
+	//for (int i = 0; i < nb; i++) {	}
 	double **test = randWeights(3, 4);
-	Layer *first = makeLayer(0, 3, sum, sigma);
-	Layer *second = makeLayer(1, 4, sum, sigma);
+	Layer *first = makeLayer(3, sum, sigma);
+	Layer *second = makeLayer(4, sum, sigma);
 	connLayers(test, first, second);
 
 	int testRes = testWeights(test, first, second);

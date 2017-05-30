@@ -31,7 +31,6 @@ struct Axon {
 };
 
 struct Layer {
-	int depth;
 	int dim;
 	Neuron **n;
 };

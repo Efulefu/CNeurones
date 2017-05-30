@@ -4,14 +4,44 @@
 #include "HelloNeurones.h"
 #include "UnitTests.h"
 
-
+Network *p;
 
 
 int main()
 {
-	runTest();
+	//runTest();
+	int layerSize = 3;
+	int nbLayers = 2;
+	Layer **layers = malloc(sizeof(Layer*) * nbLayers);
+	for (int i = 0; i < nbLayers; i++) {
+		layers[i] = makeLayer(layerSize, sum, sigma);
+	}
+
+	Network *n = initNet(nbLayers, layers);
+
+	double in[] = { 0.5 };
+	double *res = feedVector(1, &in[0], n);
+	
+	printf("Printing results vector\n\n");
+	printVector(layerSize, res);
+
+
 	getchar();
     return 0;
+}
+
+void printVector(int size, double *v) {
+	printf("This vector of size %d contains:\n", size);
+	printf("[ ");
+	int last = size - 1;
+	for (int i = 0; i < size; i++) {
+		if (i == last) {
+			printf("%d ]", v[i]);
+		}
+		else {
+			printf("%d, ", v[i]);
+		}
+	}
 }
 
 
@@ -78,10 +108,23 @@ Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
 	return n;
 }
 
-Network* makeNet(int nbLayers, Layer **layers) {
+Network* initNet(int nbLayers, Layer **layers) {
 	Network *n = malloc(sizeof(Network));
 	n->layers = layers;
 	n->nbLayers = nbLayers;
+	//sanity check
+	if (nbLayers < 2) {
+		printf("Cannot make network with less than 2 layers\n");
+		return NULL;
+	}
+	//connect layers
+	for (int i = 1; i < nbLayers; i++) {
+		int firstDim = layers[i-1]->dim;
+		int secondDim = layers[i]->dim;
+		double **w = randWeights(firstDim, secondDim);
+		connLayers(w, layers[i-1], layers[i]);
+	}
+	//p = n;
 	return n;
 }
 
