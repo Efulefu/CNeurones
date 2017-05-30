@@ -41,6 +41,8 @@ struct Network {
 };
 
 // init functions
+Network* initNet(int nbLayers, Layer **layers);
+double* feedVector(int vSize, double *v, Network *net);
 Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double));
 Axon* makeAxe(double w, Neuron* in, Neuron* out);
 Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double));
@@ -53,3 +55,5 @@ Axon*** connLayers(double **w, Layer* in, Layer* out);
 
 double sum(int, double*);
 double sigma(double);
+void printVector(int vSize, double *v);
+void printWeights(int size, Axon **axes);

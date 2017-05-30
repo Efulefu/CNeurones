@@ -8,6 +8,10 @@ double randfrom(double min, double max)
 	return min + (rand() / div);
 }
 
+void seedRand() {
+	srand((unsigned int)time(NULL));
+}
+
 double* randW(int dim) {
 	double *res = malloc(sizeof(double) * dim);
 	for (int i = 0; i < dim; i++) {
@@ -19,10 +23,7 @@ double* randW(int dim) {
 double** randWeights(int inDim, int outDim) {
 	double **res = malloc(sizeof(double*) * inDim);
 	for (int i = 0; i < inDim; i++) {
-		res[i] = malloc(sizeof(double) * outDim);
-		for (int j = 0; j < outDim; j++) {
-			res[i][j] = randfrom(0, 1);
-		}
+		res[i] = randW(outDim);
 	}
 	return res;
 }
@@ -43,7 +44,7 @@ int testWeights(double **w, Layer *coucheFrom, Layer *coucheTo) {
 
 //make the run dynamic
 void runTest(/*int nb, int *dims*/) {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	//for (int i = 0; i < nb; i++) {	}
 	double **test = randWeights(3, 4);
 	Layer *first = makeLayer(3, sum, sigma);
