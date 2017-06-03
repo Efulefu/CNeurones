@@ -7,53 +7,56 @@
 #include <stdarg.h>
 #include <math.h>
 #include <time.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include "UnitTests.h"
+#include "Utils.h"
+
+// globals
+bool verbose = false;
 
 // structure declarations and definitions
-
-typedef struct Neuron Neuron;
-typedef struct Axon Axon;
-typedef struct Layer Layer;
-typedef struct Network Network;
 
 struct Neuron {
 	double(*sum)(int, double*);
 	double(*sigma)(double);
 	int nbIn;
-	Axon **e;
+	struct Axon **e;
 	int nbOut;
-	Axon **s;
+	struct Axon **s;
 };
 
 struct Axon {
 	double w;
-	Neuron *e;
-	Neuron *s;
+	struct Neuron *e;
+	struct Neuron *s;
 };
 
 struct Layer {
 	int dim;
-	Neuron **n;
+	struct Neuron **n;
 };
 
 struct Network {
 	int nbLayers;
-	Layer **layers;
+	struct Layer **layers;
 };
 
 // init functions
-Network* initNet(int nbLayers, Layer **layers);
-double* feedVector(int vSize, double *v, Network *net);
-Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double));
-Axon* makeAxe(double w, Neuron* in, Neuron* out);
-Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double));
+struct Network* initNet(int nbLayers, struct Layer **layers);
+double* feedVector(int vSize, double *v, struct Network *net);
+struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double));
+struct Axon* makeAxe(double w, struct  Neuron* in, struct  Neuron* out);
+struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double));
 
 // handling functions
-Axon*** connLayers(double **w, Layer* in, Layer* out);
+void connLayers(double **w, struct Layer* in, struct Layer *out);
+struct Axon*** connLayersAlloc(double **w, struct Layer* in, struct Layer *out);
+struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool alloc);
 
 
 // other functions
 
 double sum(int, double*);
 double sigma(double);
-void printVector(int vSize, double *v);
-void printWeights(int size, Axon **axes);

@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include "UnitTests.h"
+#include "HelloNeurones.h"
+#include "Utils.h"
 
 double randfrom(double min, double max)
 {
@@ -28,7 +29,7 @@ double** randWeights(int inDim, int outDim) {
 	return res;
 }
 
-int testWeights(double **w, Layer *coucheFrom, Layer *coucheTo) {
+int testWeights(double **w, struct Layer *coucheFrom, struct Layer *coucheTo) {
 	for (int i = 0; i < coucheFrom->dim; i++) {
 		for (int j = 0; j < coucheTo->dim; j++) {
 			if (w[i][j] != coucheFrom->n[i]->s[j]->w) {
@@ -47,8 +48,8 @@ void runTest(/*int nb, int *dims*/) {
 	srand((unsigned int)time(NULL));
 	//for (int i = 0; i < nb; i++) {	}
 	double **test = randWeights(3, 4);
-	Layer *first = makeLayer(3, sum, sigma);
-	Layer *second = makeLayer(4, sum, sigma);
+	struct Layer *first = makeLayer(3, sum, sigma);
+	struct Layer *second = makeLayer(4, sum, sigma);
 	connLayers(test, first, second);
 
 	int testRes = testWeights(test, first, second);
