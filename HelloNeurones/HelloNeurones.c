@@ -3,16 +3,20 @@
 
 #include "HelloNeurones.h"
 
+
+// globals
+bool verbose = false;
+
 int main(int argc, char* argv[])
 {
 	// CLI options
 	for (int i = 0; i < argc; i++) {
-		if (strcmp("-log", argv[i])) {
+		if (strcmp("-log", argv[i]) == 0) {
 			FILE *stream;
 			errno_t err;
 			if ((err = freopen_s(&stream, "neuron_log.txt", "w+", stdout)) != 0) exit(-1);
 		}
-		if (strcmp("-v", argv[i])) {
+		if (strcmp("-v", argv[i]) == 0) {
 			verbose = true;
 		}
 	}

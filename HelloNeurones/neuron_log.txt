@@ -1,0 +1,79 @@
+!!! Printing w[0] after random generation
+[ 0.083773, 0.067263, 0.617115 ]
+!!! Printing w[1] after random generation
+[ 0.167333, 0.315500, 0.780663 ]
+!!! Printing w[2] after random generation
+[ 0.237739, 0.064150, 0.225654 ]
+struct Layer 0
+---------------------------------------------------
+struct Neuron 0
+Inputs: 1      Outputs: 3
+---------------------------------------------------
+In struct Axon struct address: 0000021B5DE4FC10
+Input weights:
+[ 1.000000 ]
+---------------------------------------------------
+Out struct Axon struct address: 0000021B5DE52270
+Output weights:
+[ 0.083773, 0.067263, 0.617115 ]
+struct Neuron 1
+Inputs: 1      Outputs: 3
+---------------------------------------------------
+In struct Axon struct address: 0000021B5DE4FF30
+Input weights:
+[ 1.000000 ]
+---------------------------------------------------
+Out struct Axon struct address: 0000021B5DE52030
+Output weights:
+[ 0.167333, 0.315500, 0.780663 ]
+struct Neuron 2
+Inputs: 1      Outputs: 3
+---------------------------------------------------
+In struct Axon struct address: 0000021B5DE4FBC0
+Input weights:
+[ 1.000000 ]
+---------------------------------------------------
+Out struct Axon struct address: 0000021B5DE52990
+Output weights:
+[ 0.237739, 0.064150, 0.225654 ]
+struct Layer 1
+---------------------------------------------------
+struct Neuron 0
+Inputs: 3      Outputs: 1
+---------------------------------------------------
+In struct Axon struct address: 0000021B5DE51C10
+Input weights:
+[ 0.083773, 0.167333, 0.237739 ]
+---------------------------------------------------
+Out struct Axon struct address: 0000021B5DE50020
+Output weights:
+[ 1.000000 ]
+struct Neuron 1
+Inputs: 3      Outputs: 1
+---------------------------------------------------
+In struct Axon struct address: 0000021B5DE51FD0
+Input weights:
+[ 0.067263, 0.315500, 0.064150 ]
+---------------------------------------------------
+Out struct Axon struct address: 0000021B5DE4FE90
+Output weights:
+[ 1.000000 ]
+struct Neuron 2
+Inputs: 3      Outputs: 1
+---------------------------------------------------
+In struct Axon struct address: 0000021B5DE51AF0
+Input weights:
+[ 0.617115, 0.780663, 0.225654 ]
+---------------------------------------------------
+Out struct Axon struct address: 0000021B5DE4FA30
+Output weights:
+[ 1.000000 ]
+---------------------------------------------------
+At layer 0 the vector values are:
+[ 0.377541, 0.377541, 0.377541 ]
+---------------------------------------------------
+At layer 1 the vector values are:
+[ 0.406720, 0.399699, 0.399699 ]
+Printing results vector
+
+[ 0.406720, 0.399699, 0.399699 ]

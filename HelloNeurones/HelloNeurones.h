@@ -13,9 +13,6 @@
 #include "UnitTests.h"
 #include "Utils.h"
 
-// globals
-bool verbose = false;
-
 // structure declarations and definitions
 
 struct Neuron {
