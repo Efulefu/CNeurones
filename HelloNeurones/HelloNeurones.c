@@ -24,28 +24,27 @@ int main(int argc, char* argv[])
 
 	seedRand();
 	int layerSize = 3;
-	int nbLayers = 2;
+	int nbLayers = 5;
 	struct Layer **layers = malloc(sizeof(struct Layer*) * nbLayers);
 	for (int i = 0; i < nbLayers; i++) {
-		layers[i] = makeLayer(layerSize, sum, sigma);
+		layers[i] = makeLayer(layerSize, sumVector, sigma);
 	}
 
 	struct Network *n = (struct Network *) initNet(nbLayers, layers);
 
 	if (verbose) printNetwork(n);
 
-	double in[] = { 0.5 };
-	double *res = feedVector(1, &in[0], n);
+	double in[] = { 0.5, 0.2, 0.8 };
+	double *res = feedVector(3, &in[0], n);
 
 
 	getchar();
     return 0;
 }
 
-double sum(int d, double *v) {
-	int i;
+double sumVector(int d, double *v) {
 	double res = 0;
-	for (i = 0; i < d; i++) {
+	for (int i = 0; i < d; i++) {
 		res += v[i];
 	}
 	return res;
@@ -92,11 +91,11 @@ struct Axon* makeAxe(double w, struct Neuron* in, struct Neuron* out) {
 	a->w = w;
 	a->e = in;
 	a->s = out;
-	if (in != NULL) {
+	if (in) {
 		in->s = realloc(in->s, sizeof(struct Axon *) * ++(in->nbOut));
 		in->s[in->nbOut - 1] = a;
 	}
-	if (out != NULL) {
+	if (out) {
 		out->e = realloc(out->e, sizeof(struct Axon *) * ++(out->nbIn));
 		out->e[out->nbIn - 1] = a;
 	}
@@ -111,6 +110,7 @@ struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
 	n->nbIn = 0;
 	n->s = NULL;
 	n->nbOut = 0;
+	n->result = 0;
 	return n;
 }
 
@@ -120,8 +120,8 @@ struct Network* initNet(int nbLayers, struct Layer **layers) {
 	n->layers = layers;
 	n->nbLayers = nbLayers;
 	//sanity check
-	if (nbLayers < 1) {
-		printf("Cannot make network with less than 1 layers\n");
+	if (nbLayers < 2) {
+		printf("Cannot make network with less than 2 layers\n");
 		return NULL;
 	}
 	//connect layers
@@ -158,34 +158,66 @@ struct Network* initNet(int nbLayers, struct Layer **layers) {
 }
 
 double* feedVector(int vSize, double *v, struct Network *net) {
-	int lSize = net->layers[0]->dim;
-	double *layerRes = malloc(sizeof(double) * lSize);
-	for (int i = 0; i < net->nbLayers; i++) {
-		if (lSize < net->layers[i]->dim) {
-			lSize = net->layers[i]->dim;
-			layerRes = realloc(layerRes, sizeof(double) * lSize);
-		}
-		//pass values through this layer
-		for (int j = 0; j < lSize; j++) {
-			struct Neuron *n = net->layers[i]->n[j];
-			//multiply by weights first here!!!
+	int nbNeurIn = net->layers[0]->dim;
+	// sanity check
+	if (vSize != nbNeurIn) {
+		printf("Initial vector needs to be size of entry layer!\n");
+		return NULL;
+	}
 
+	// let's do one layer here
+	int i = 0, j = 0, k = 0;
+	for (; i < nbNeurIn; i++) {
+		double value = v[i];
+		// keep in mind first layer neurons have just one entry, hence e[0]
+		// and reason why we can immediately put the value back in layerRes
+		net->layers[0]->n[i]->result = net->layers[0]->n[i]->sigma(value * net->layers[0]->n[i]->e[0]->w);
+	}
+	// this was all just to understand the logic, because first layer weights should always be 1.0 right?
+
+	// init stack values:
+	int nbNeurOut, nbEntryAxons;
+
+	// initialize results storage array
+	int prevLayerSize = net->layers[0]->dim;
+	double *tempVector = malloc(sizeof(double) * prevLayerSize);
+	struct Layer *nextLayer;
+
+	// init at 1 because first layer already entered
+	for (i = 1; i < net->nbLayers; i++) {
+		nextLayer = net->layers[i];
+		nbNeurOut = nextLayer->dim;
+
+		//pass values through this layer's neurons
+		for (k = 0; k < nbNeurOut; k++) {
+			struct Neuron *target = nextLayer->n[k];
+			nbEntryAxons = target->nbIn;
+
+			// make sure tempVector is large enough for the results
+			if (nbEntryAxons > prevLayerSize) {
+				tempVector = realloc(tempVector, sizeof(double) * nbEntryAxons);
+			}
+
+			for (j = 0; j < nbEntryAxons; j++) {
+				struct Axon *axe = target->e[j];
+				double weight = axe->w;
+				double prevRes = axe->e->result;
+				tempVector[j] = (weight * prevRes);
+			}
 			//then sum
-			double sum = n->sum(vSize, v);
+			double sum = target->sum(nbEntryAxons, tempVector);
 			//activation function
-			layerRes[j] = n->sigma(sum);
+			target->result = target->sigma(sum);
 		}
 		if (verbose) {
 			printf("---------------------------------------------------\n");
 			printf("At layer %d the vector values are:\n", i);
-			printVector(lSize, layerRes);
+			printNeuronResults(nextLayer->dim, nextLayer->n);
 		}
-		//var replacement makes it recursive?
-		v = layerRes;
 	}
 	if (verbose) {
-		printf("Printing results vector\n\n");
-		printVector(lSize, v);
+		printf("Printing results vector\n");
+		printNeuronResults(nextLayer->dim, nextLayer->n);
 	}
 	return v;
 }

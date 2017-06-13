@@ -1,6 +1,19 @@
 
 #include "Utils.h"
 
+void printNeuronResults(int size, struct Neuron **neurons) {
+	printf("[ ");
+	int last = size - 1;
+	for (int i = 0; i < size; i++) {
+		if (i == last) {
+			printf("%f ]\n", neurons[i]->result);
+		}
+		else {
+			printf("%f, ", neurons[i]->result);
+		}
+	}
+}
+
 void printVector(int size, double *v) {
 	//printf("This vector of size %d contains:\n", size);
 	printf("[ ");

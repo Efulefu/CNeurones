@@ -22,6 +22,7 @@ struct Neuron {
 	struct Axon **e;
 	int nbOut;
 	struct Axon **s;
+	double result;
 };
 
 struct Axon {
@@ -55,5 +56,5 @@ struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool
 
 // other functions
 
-double sum(int, double*);
+double sumVector(int, double*);
 double sigma(double);

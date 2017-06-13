@@ -5,7 +5,9 @@
 
 struct Axon;
 struct Network;
+struct Neuron;
 
+void printNeuronResults(int size, struct Neuron **neurons);
 void printVector(int vSize, double *v);
 void printWeights(int size, struct Axon **axes);
 void printNetwork(struct Network *n);
