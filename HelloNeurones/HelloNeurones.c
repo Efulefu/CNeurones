@@ -16,8 +16,28 @@ int main(int argc, char* argv[])
 			errno_t err;
 			if ((err = freopen_s(&stream, "neuron_log.txt", "w+", stdout)) != 0) exit(-1);
 		}
+
 		if (strcmp("-v", argv[i]) == 0) {
 			verbose = true;
+		}
+
+		if (strcmp("-cfg", argv[i]) == 0) {
+			// Guard clause
+			if (i + 1 >= argc) {
+				printf("Use for '-cfg' option: -cfg <filename>\n");
+				exit(-1);
+			}
+			
+			// Parse the given file here
+		}
+
+		if (strcmp("-learn", argv[i]) == 0) {
+			// Guard clause
+			if (i + 1 >= argc) {
+				printf("Use for '-learn' option: -learn <filename>\n");
+				exit(-1);
+			}
+
 		}
 	}
 
@@ -25,17 +45,19 @@ int main(int argc, char* argv[])
 	seedRand();
 	int layerSize = 3;
 	int nbLayers = 5;
+	double eta = 0.5;
+
 	struct Layer **layers = malloc(sizeof(struct Layer*) * nbLayers);
 	for (int i = 0; i < nbLayers; i++) {
 		layers[i] = makeLayer(layerSize, sumVector, sigma);
 	}
 
-	struct Network *n = (struct Network *) initNet(nbLayers, layers);
+	struct Network *n = (struct Network *) initNet(nbLayers, layers, eta);
 
 	if (verbose) printNetwork(n);
 
 	double in[] = { 0.5, 0.2, 0.8 };
-	double *res = feedVector(3, &in[0], n);
+	feedVector(3, &in[0], n);
 
 
 	getchar();
@@ -115,10 +137,11 @@ struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
 }
 
 
-struct Network* initNet(int nbLayers, struct Layer **layers) {
+struct Network* initNet(int nbLayers, struct Layer **layers, double eta) {
 	struct Network *n = malloc(sizeof(struct Network));
 	n->layers = layers;
 	n->nbLayers = nbLayers;
+	n->eta = eta;
 	//sanity check
 	if (nbLayers < 2) {
 		printf("Cannot make network with less than 2 layers\n");
@@ -157,7 +180,9 @@ struct Network* initNet(int nbLayers, struct Layer **layers) {
 	return n;
 }
 
-double* feedVector(int vSize, double *v, struct Network *net) {
+
+
+void feedVector(int vSize, double *v, struct Network *net) {
 	int nbNeurIn = net->layers[0]->dim;
 	// sanity check
 	if (vSize != nbNeurIn) {
@@ -219,5 +244,4 @@ double* feedVector(int vSize, double *v, struct Network *net) {
 		printf("Printing results vector\n");
 		printNeuronResults(nextLayer->dim, nextLayer->n);
 	}
-	return v;
 }

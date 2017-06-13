@@ -39,14 +39,22 @@ struct Layer {
 struct Network {
 	int nbLayers;
 	struct Layer **layers;
+	/// retro propagation coefficient
+	double eta;
 };
 
 // init functions
-struct Network* initNet(int nbLayers, struct Layer **layers);
-double* feedVector(int vSize, double *v, struct Network *net);
+struct Network* initNet(int nbLayers, struct Layer **layers, double eta);
 struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double));
-struct Axon* makeAxe(double w, struct  Neuron* in, struct  Neuron* out);
+struct Axon* makeAxe(double w, struct  Neuron* in, struct Neuron* out);
 struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double));
+
+// propagation
+void feedVector(int vSize, double *v, struct Network *net);
+
+// retropropagation
+double* errorHebb(double *expected, double *res);
+double* errorWidrowHoff(double *expected, double *res);
 
 // handling functions
 void connLayers(double **w, struct Layer* in, struct Layer *out);
