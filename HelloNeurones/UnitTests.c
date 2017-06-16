@@ -32,10 +32,10 @@ double** randWeights(int inDim, int outDim) {
 int testWeights(double **w, struct Layer *coucheFrom, struct Layer *coucheTo) {
 	for (int i = 0; i < coucheFrom->dim; i++) {
 		for (int j = 0; j < coucheTo->dim; j++) {
-			if (w[i][j] != coucheFrom->n[i]->s[j]->w) {
+			if (w[i][j] != coucheFrom->n[i]->outputs[j]->w) {
 				return -1;
 			}
-			if (w[i][j] != coucheTo->n[j]->e[i]->w) {
+			if (w[i][j] != coucheTo->n[j]->inputs[i]->w) {
 				return 1;
 			}
 		}

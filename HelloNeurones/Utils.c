@@ -68,13 +68,13 @@ void printNetwork(struct Network *n) {
 			int nbOut = neur->nbOut;
 			printf("Inputs: %d      Outputs: %d\n", nbIn, nbOut);
 			printf("---------------------------------------------------\n");
-			printf("In struct Axon struct address: %p\n", neur->e);
+			printf("In struct Axon struct address: %p\n", neur->inputs);
 			printf("Input weights:\n");
-			printWeights(nbIn, neur->e);
+			printWeights(nbIn, neur->inputs);
 			printf("---------------------------------------------------\n");
-			printf("Out struct Axon struct address: %p\n", neur->s);
+			printf("Out struct Axon struct address: %p\n", neur->outputs);
 			printf("Output weights:\n");
-			printWeights(nbOut, neur->s);
+			printWeights(nbOut, neur->outputs);
 		}
 	}
 }

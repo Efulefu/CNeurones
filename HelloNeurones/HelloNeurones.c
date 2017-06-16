@@ -72,6 +72,8 @@ double sumVector(int d, double *v) {
 	return res;
 }
 
+
+
 double sigma(double sum) {
 	return 1 / (1 + exp(sum));
 }
@@ -111,15 +113,15 @@ struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(doub
 struct Axon* makeAxe(double w, struct Neuron* in, struct Neuron* out) {
 	struct Axon *a = malloc(sizeof(struct Axon));
 	a->w = w;
-	a->e = in;
-	a->s = out;
+	a->in = in;
+	a->out = out;
 	if (in) {
-		in->s = realloc(in->s, sizeof(struct Axon *) * ++(in->nbOut));
-		in->s[in->nbOut - 1] = a;
+		in->outputs = realloc(in->outputs, sizeof(struct Axon *) * ++(in->nbOut));
+		in->outputs[in->nbOut - 1] = a;
 	}
 	if (out) {
-		out->e = realloc(out->e, sizeof(struct Axon *) * ++(out->nbIn));
-		out->e[out->nbIn - 1] = a;
+		out->inputs = realloc(out->inputs, sizeof(struct Axon *) * ++(out->nbIn));
+		out->inputs[out->nbIn - 1] = a;
 	}
 	return a;
 }
@@ -127,10 +129,10 @@ struct Axon* makeAxe(double w, struct Neuron* in, struct Neuron* out) {
 struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
 	struct Neuron *n = malloc(sizeof(struct Neuron));
 	n->sum = sum;
-	n->sigma = sigma;
-	n->e = NULL;
+	n->activation = sigma;
+	n->inputs = NULL;
 	n->nbIn = 0;
-	n->s = NULL;
+	n->outputs = NULL;
 	n->nbOut = 0;
 	n->result = 0;
 	return n;
@@ -166,15 +168,15 @@ struct Network* initNet(int nbLayers, struct Layer **layers, double eta) {
 	struct Neuron *neur;
 	for (i = 0; i < dim; i++) {
 		neur = layers[0]->n[i];
-		neur->e = malloc(sizeof(struct Axon *));
-		neur->e[0] = makeAxe(1.0, NULL, neur);
+		neur->inputs = malloc(sizeof(struct Axon *));
+		neur->inputs[0] = makeAxe(1.0, NULL, neur);
 	}
 	int last = nbLayers - 1;
 	dim = layers[last]->dim;
 	for (i = 0; i < dim; i++) {
 		neur = layers[last]->n[i];
-		neur->s = malloc(sizeof(struct Axon *));
-		neur->s[0] = makeAxe(1.0, neur, NULL);
+		neur->outputs = malloc(sizeof(struct Axon *));
+		neur->outputs[0] = makeAxe(1.0, neur, NULL);
 	}
 
 	return n;
@@ -187,7 +189,7 @@ void feedVector(int vSize, double *v, struct Network *net) {
 	// sanity check
 	if (vSize != nbNeurIn) {
 		printf("Initial vector needs to be size of entry layer!\n");
-		return NULL;
+		return;
 	}
 
 	// let's do one layer here
@@ -196,7 +198,7 @@ void feedVector(int vSize, double *v, struct Network *net) {
 		double value = v[i];
 		// keep in mind first layer neurons have just one entry, hence e[0]
 		// and reason why we can immediately put the value back in layerRes
-		net->layers[0]->n[i]->result = net->layers[0]->n[i]->sigma(value * net->layers[0]->n[i]->e[0]->w);
+		net->layers[0]->n[i]->result = net->layers[0]->n[i]->activation(value * net->layers[0]->n[i]->inputs[0]->w);
 	}
 	// this was all just to understand the logic, because first layer weights should always be 1.0 right?
 
@@ -224,15 +226,15 @@ void feedVector(int vSize, double *v, struct Network *net) {
 			}
 
 			for (j = 0; j < nbEntryAxons; j++) {
-				struct Axon *axe = target->e[j];
+				struct Axon *axe = target->inputs[j];
 				double weight = axe->w;
-				double prevRes = axe->e->result;
+				double prevRes = axe->in->result;
 				tempVector[j] = (weight * prevRes);
 			}
 			//then sum
 			double sum = target->sum(nbEntryAxons, tempVector);
 			//activation function
-			target->result = target->sigma(sum);
+			target->result = target->activation(sum);
 		}
 		if (verbose) {
 			printf("---------------------------------------------------\n");
@@ -241,7 +243,7 @@ void feedVector(int vSize, double *v, struct Network *net) {
 		}
 	}
 	if (verbose) {
-		printf("Printing results vector\n");
-		printNeuronResults(nextLayer->dim, nextLayer->n);
+		printf("Reached end of network\n");
 	}
+	free(tempVector);
 }
