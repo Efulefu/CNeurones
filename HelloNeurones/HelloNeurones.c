@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
 	struct Layer **layers = malloc(sizeof(struct Layer*) * nbLayers);
 	for (int i = 0; i < nbLayers; i++) {
-		layers[i] = makeLayer(layerSize, sumVector, sigma);
+		layers[i] = makeLayer(layerSize, sumVector, sigmoidIntegral);
 	}
 
 	struct Network *n = (struct Network *) initNet(nbLayers, layers, eta);
@@ -74,8 +74,12 @@ double sumVector(int d, double *v) {
 
 
 
-double sigma(double sum) {
-	return 1 / (1 + exp(sum));
+double sigmoid(double sum) {
+	return 1 / (1 + exp(-sum));
+}
+
+double sigmoidIntegral(double val) {
+	return log(1 + exp(val));
 }
 
 void connLayers(double **w, struct Layer* in, struct Layer* out) {
@@ -99,12 +103,12 @@ struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool
 	return res;
 }
 
-struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double)) {
+struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*activation)(double)) {
 	struct Layer *c = malloc(sizeof(struct Layer));
 	c->dim = dim;
 	struct Neuron **n = malloc(sizeof(struct Neuron*) * dim);
 	for (int i = 0; i < dim; i++) {
-		n[i] = makeNeur(sum, sigma);
+		n[i] = makeNeur(sum, activation);
 	}
 	c->n = n;
 	return c;
@@ -182,7 +186,84 @@ struct Network* initNet(int nbLayers, struct Layer **layers, double eta) {
 	return n;
 }
 
+double* errorWidrowHoff(double *expected, double *res, int dim, double eta) {
+	int i = 0;
+	for (; i < dim; i++) {
+		res[i] = (expected[i] - res[i]) * eta;
+	}
+	return res;
+}
 
+void simpleRetroPropagate(struct Network *net, double* expected) {
+	// now we have an array of eta * ( t(j) - o(j) )
+	int errorVectorSize = -1;
+	double *neuronErrVector = NULL;
+	int i = net->nbLayers - 1;
+	// Initial calculations for retropropagation
+	struct Layer* layer = net->layers[i--];		// i-- because we will need to step over this layer in the loop
+	int nbNeur = layer->dim;
+	double **layerErrVector = malloc(sizeof(double *) * nbNeur);
+	for (int j = nbNeur-1; j > -1; j--) {
+		struct Neuron* n = layer->n[j];
+		int nbAxons = n->nbIn;
+
+		// handle dynamic allocation
+		if (neuronErrVector == NULL) {
+			errorVectorSize = nbAxons;
+			neuronErrVector = malloc(sizeof(double) * nbAxons);
+		}
+		if (nbAxons > errorVectorSize) {
+			errorVectorSize = nbAxons;
+			neuronErrVector = realloc(neuronErrVector, sizeof(double) * nbAxons);
+		}
+
+		int k;
+		for (k = 0; k < nbAxons; k++) {
+			neuronErrVector[k] = sigmoidIntegral(n->result);
+		}
+
+		layerErrVector[j] = net->error(expected, neuronErrVector, nbAxons, net->eta);
+
+		for (k = 0; k < nbAxons; k++) {
+			double w = n->inputs[k]->w;
+			n->inputs[k]->w = w - neuronErrVector[k];
+		}
+	}
+
+	// we now our initialized error vectors?
+	// TODO: iterate the errorvalues back through the axons multiplied by the result of applying
+	// the derivated transfer function to the preceding neuron's result
+
+	for (; i > -1; i--) {
+		layer = net->layers[i];
+		nbNeur = layer->dim;
+		for (int j = nbNeur-1; j > -1; j--) {
+			struct Neuron* n = layer->n[j];
+			int nbAxons = n->nbIn;
+
+			// handle dynamic allocation
+			if (neuronErrVector == NULL) {
+				errorVectorSize = nbAxons;
+				neuronErrVector = malloc(sizeof(double) * nbAxons);
+			}
+			if (nbAxons > errorVectorSize) {
+				errorVectorSize = nbAxons;
+				neuronErrVector = realloc(neuronErrVector, sizeof(double) * nbAxons);
+			}
+			int k;
+			for (k = 0; k < nbAxons; k++) {
+				neuronErrVector[k] = sigmoidIntegral(n->result);
+			}
+
+			neuronErrVector = net->error(expected, neuronErrVector, nbAxons, net->eta);
+
+			for (k = 0; k < nbAxons; k++) {
+				double w = n->inputs[k]->w;
+				n->inputs[k]->w = w - neuronErrVector[k];
+			}
+		}
+	}
+}
 
 void feedVector(int vSize, double *v, struct Network *net) {
 	int nbNeurIn = net->layers[0]->dim;

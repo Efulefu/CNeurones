@@ -42,7 +42,7 @@ struct Network {
 	/// retro propagation coefficient
 	double eta;
 	/// error propagation callback
-	void(*error)(double *expected, double *res);
+	double*(*error)(double *expected, double *res, int dim, double eta);
 };
 
 // init functions
@@ -55,16 +55,17 @@ struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double));
 void feedVector(int vSize, double *v, struct Network *net);
 
 // retropropagation
-void errorHebb(double *expected, double *res);
-void errorWidrowHoff(double *expected, double *res);
+void simpleRetroPropagate(struct Network* net, double* expected);
+//double* errorHebb(double *expected, double *res, int dim, double eta);
+double* errorWidrowHoff(double *expected, double *res, int dim, double eta);
 
 // handling functions
 void connLayers(double **w, struct Layer* in, struct Layer *out);
-struct Axon*** connLayersAlloc(double **w, struct Layer* in, struct Layer *out);
+struct Axon*** connLayersAlloc(double **w, struct Layer* in, struct Layer* out);
 struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool alloc);
 
 
 // other functions
 
 double sumVector(int, double*);
-double sigma(double);
+double sigmoid(double);

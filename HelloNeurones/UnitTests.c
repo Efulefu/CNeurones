@@ -48,8 +48,8 @@ void runTest(/*int nb, int *dims*/) {
 	srand((unsigned int)time(NULL));
 	//for (int i = 0; i < nb; i++) {	}
 	double **test = randWeights(3, 4);
-	struct Layer *first = makeLayer(3, sumVector, sigma);
-	struct Layer *second = makeLayer(4, sumVector, sigma);
+	struct Layer *first = makeLayer(3, sumVector, sigmoid);
+	struct Layer *second = makeLayer(4, sumVector, sigmoid);
 	connLayers(test, first, second);
 
 	int testRes = testWeights(test, first, second);
