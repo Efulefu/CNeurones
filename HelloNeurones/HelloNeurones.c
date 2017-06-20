@@ -7,6 +7,21 @@
 // globals
 bool verbose = false;
 
+const struct FuncAndDerivative SoftPlus = {
+	softplus,
+	sigmoid
+};
+
+const struct FuncAndDerivative Sigmoid = {
+	sigmoid,
+	derivatedSigmoid
+};
+
+const struct FuncAndDerivative LeakyRelu = {
+	leakyRelu,
+	leakyReluDerivated
+};
+
 int main(int argc, char* argv[])
 {
 	// CLI options
@@ -49,7 +64,7 @@ int main(int argc, char* argv[])
 
 	struct Layer **layers = malloc(sizeof(struct Layer*) * nbLayers);
 	for (int i = 0; i < nbLayers; i++) {
-		layers[i] = makeLayer(layerSize, sumVector, sigmoidIntegral);
+		layers[i] = makeLayer(layerSize, sumVector, SoftPlus);
 	}
 
 	struct Network *n = (struct Network *) initNet(nbLayers, layers, eta);
@@ -72,14 +87,26 @@ double sumVector(int d, double *v) {
 	return res;
 }
 
-
+double derivatedSigmoid(double val) {
+	return sigmoid(val) * (1 - sigmoid(val));
+}
 
 double sigmoid(double sum) {
 	return 1 / (1 + exp(-sum));
 }
 
-double sigmoidIntegral(double val) {
+double softplus(double val) {
 	return log(1 + exp(val));
+}
+
+double leakyRelu(double val) {
+	double res = val < 0 ? 0.01 * val : val;
+	return res;
+}
+
+double leakyReluDerivated(double val) {
+	double res = val < 0 ? 0.01 : 1;
+	return res;
 }
 
 void connLayers(double **w, struct Layer* in, struct Layer* out) {
@@ -103,7 +130,7 @@ struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool
 	return res;
 }
 
-struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*activation)(double)) {
+struct Layer* makeLayer(int dim, double(*sum)(int, double*), struct FuncAndDerivative activation) {
 	struct Layer *c = malloc(sizeof(struct Layer));
 	c->dim = dim;
 	struct Neuron **n = malloc(sizeof(struct Neuron*) * dim);
@@ -130,10 +157,10 @@ struct Axon* makeAxe(double w, struct Neuron* in, struct Neuron* out) {
 	return a;
 }
 
-struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double)) {
+struct Neuron* makeNeur(double(*sum)(int, double*), struct FuncAndDerivative activation) {
 	struct Neuron *n = malloc(sizeof(struct Neuron));
 	n->sum = sum;
-	n->activation = sigma;
+	n->activation = activation;
 	n->inputs = NULL;
 	n->nbIn = 0;
 	n->outputs = NULL;
@@ -148,6 +175,7 @@ struct Network* initNet(int nbLayers, struct Layer **layers, double eta) {
 	n->layers = layers;
 	n->nbLayers = nbLayers;
 	n->eta = eta;
+	n->error = errorWidrowHoff;
 	//sanity check
 	if (nbLayers < 2) {
 		printf("Cannot make network with less than 2 layers\n");
@@ -186,81 +214,46 @@ struct Network* initNet(int nbLayers, struct Layer **layers, double eta) {
 	return n;
 }
 
-double* errorWidrowHoff(double *expected, double *res, int dim, double eta) {
-	int i = 0;
-	for (; i < dim; i++) {
-		res[i] = (expected[i] - res[i]) * eta;
+void errorWidrowHoff(double *expected, struct Layer* lastLayer, double eta) {
+	int i = 0, l = lastLayer->dim;
+	for (; i < l; i++) {
+		struct Neuron* n = lastLayer->n[i];
+		n->result = (expected[i] - n->result) * eta;
 	}
-	return res;
 }
 
 void simpleRetroPropagate(struct Network *net, double* expected) {
 	// now we have an array of eta * ( t(j) - o(j) )
 	int errorVectorSize = -1;
-	double *neuronErrVector = NULL;
 	int i = net->nbLayers - 1;
 	// Initial calculations for retropropagation
 	struct Layer* layer = net->layers[i--];		// i-- because we will need to step over this layer in the loop
 	int nbNeur = layer->dim;
-	double **layerErrVector = malloc(sizeof(double *) * nbNeur);
-	for (int j = nbNeur-1; j > -1; j--) {
+	int j = nbNeur - 1;
+	// build a temp vector out of the results values in the last layer neuron structs
+
+	net->error(expected, layer, net->eta);
+	for (; j > -1; j--) {
 		struct Neuron* n = layer->n[j];
-		int nbAxons = n->nbIn;
-
-		// handle dynamic allocation
-		if (neuronErrVector == NULL) {
-			errorVectorSize = nbAxons;
-			neuronErrVector = malloc(sizeof(double) * nbAxons);
-		}
-		if (nbAxons > errorVectorSize) {
-			errorVectorSize = nbAxons;
-			neuronErrVector = realloc(neuronErrVector, sizeof(double) * nbAxons);
-		}
-
-		int k;
-		for (k = 0; k < nbAxons; k++) {
-			neuronErrVector[k] = sigmoidIntegral(n->result);
-		}
-
-		layerErrVector[j] = net->error(expected, neuronErrVector, nbAxons, net->eta);
-
-		for (k = 0; k < nbAxons; k++) {
-			double w = n->inputs[k]->w;
-			n->inputs[k]->w = w - neuronErrVector[k];
-		}
+		n->result = n->activation.derivative(n->result);
 	}
 
-	// we now our initialized error vectors?
-	// TODO: iterate the errorvalues back through the axons multiplied by the result of applying
-	// the derivated transfer function to the preceding neuron's result
+	// so now initErrorVector contains the result of our WidrowHoff error calculation
+	// now to propagate it we need to copy it, pass it through the axons to another vector,
+	// then apply this error to the axons
 
-	for (; i > -1; i--) {
-		layer = net->layers[i];
+	while (i > -1) {
+		layer = net->layers[i--];
 		nbNeur = layer->dim;
-		for (int j = nbNeur-1; j > -1; j--) {
+		for (; j < nbNeur; j++) {
 			struct Neuron* n = layer->n[j];
-			int nbAxons = n->nbIn;
-
-			// handle dynamic allocation
-			if (neuronErrVector == NULL) {
-				errorVectorSize = nbAxons;
-				neuronErrVector = malloc(sizeof(double) * nbAxons);
+			double errorAtThisNeuron = 0;
+			for (int k = 0; k < n->nbOut; k++) {
+				struct Axon* axe = n->outputs[k];
+				errorAtThisNeuron += n->activation.derivative(axe->w * axe->out->result);
+				axe->w = axe->w - axe->out->result;
 			}
-			if (nbAxons > errorVectorSize) {
-				errorVectorSize = nbAxons;
-				neuronErrVector = realloc(neuronErrVector, sizeof(double) * nbAxons);
-			}
-			int k;
-			for (k = 0; k < nbAxons; k++) {
-				neuronErrVector[k] = sigmoidIntegral(n->result);
-			}
-
-			neuronErrVector = net->error(expected, neuronErrVector, nbAxons, net->eta);
-
-			for (k = 0; k < nbAxons; k++) {
-				double w = n->inputs[k]->w;
-				n->inputs[k]->w = w - neuronErrVector[k];
-			}
+			n->result = errorAtThisNeuron;
 		}
 	}
 }
@@ -279,7 +272,7 @@ void feedVector(int vSize, double *v, struct Network *net) {
 		double value = v[i];
 		// keep in mind first layer neurons have just one entry, hence e[0]
 		// and reason why we can immediately put the value back in layerRes
-		net->layers[0]->n[i]->result = net->layers[0]->n[i]->activation(value * net->layers[0]->n[i]->inputs[0]->w);
+		net->layers[0]->n[i]->result = net->layers[0]->n[i]->activation.func(value * net->layers[0]->n[i]->inputs[0]->w);
 	}
 	// this was all just to understand the logic, because first layer weights should always be 1.0 right?
 
@@ -315,7 +308,7 @@ void feedVector(int vSize, double *v, struct Network *net) {
 			//then sum
 			double sum = target->sum(nbEntryAxons, tempVector);
 			//activation function
-			target->result = target->activation(sum);
+			target->result = target->activation.func(sum);
 		}
 		if (verbose) {
 			printf("---------------------------------------------------\n");

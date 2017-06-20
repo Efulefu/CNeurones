@@ -15,9 +15,14 @@
 
 // structure declarations and definitions
 
+struct FuncAndDerivative {
+	double(*func)(double);
+	double(*derivative)(double);
+};
+
 struct Neuron {
 	double(*sum)(int, double*);
-	double(*activation)(double);
+	struct FuncAndDerivative activation;
 	int nbIn;
 	struct Axon **inputs;
 	int nbOut;
@@ -42,14 +47,14 @@ struct Network {
 	/// retro propagation coefficient
 	double eta;
 	/// error propagation callback
-	double*(*error)(double *expected, double *res, int dim, double eta);
+	void(*error)(double *expected, struct Layer* lastLayer, double eta);
 };
 
 // init functions
 struct Network* initNet(int nbLayers, struct Layer **layers, double eta);
-struct Layer* makeLayer(int dim, double(*sum)(int, double*), double(*sigma)(double));
+struct Layer* makeLayer(int dim, double(*sum)(int, double*), struct FuncAndDerivative);
 struct Axon* makeAxe(double w, struct  Neuron* in, struct Neuron* out);
-struct Neuron* makeNeur(double(*sum)(int, double*), double(*sigma)(double));
+struct Neuron* makeNeur(double(*sum)(int, double*), struct FuncAndDerivative);
 
 // propagation
 void feedVector(int vSize, double *v, struct Network *net);
@@ -57,7 +62,7 @@ void feedVector(int vSize, double *v, struct Network *net);
 // retropropagation
 void simpleRetroPropagate(struct Network* net, double* expected);
 //double* errorHebb(double *expected, double *res, int dim, double eta);
-double* errorWidrowHoff(double *expected, double *res, int dim, double eta);
+void errorWidrowHoff(double *expected, struct Layer* lastLayer, double eta);
 
 // handling functions
 void connLayers(double **w, struct Layer* in, struct Layer *out);
@@ -69,3 +74,7 @@ struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool
 
 double sumVector(int, double*);
 double sigmoid(double);
+double softplus(double);
+double derivatedSigmoid(double);
+double leakyRelu(double);
+double leakyReluDerivated(double);

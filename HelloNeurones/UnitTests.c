@@ -47,7 +47,7 @@ int testWeights(double **w, struct Layer *coucheFrom, struct Layer *coucheTo) {
 void runTest(/*int nb, int *dims*/) {
 	srand((unsigned int)time(NULL));
 	//for (int i = 0; i < nb; i++) {	}
-	double **test = randWeights(3, 4);
+	/*double **test = randWeights(3, 4);
 	struct Layer *first = makeLayer(3, sumVector, sigmoid);
 	struct Layer *second = makeLayer(4, sumVector, sigmoid);
 	connLayers(test, first, second);
@@ -62,5 +62,5 @@ void runTest(/*int nb, int *dims*/) {
 	default:
 		printf("Test passed\n");
 		break;
-	}
+	}*/
 }
