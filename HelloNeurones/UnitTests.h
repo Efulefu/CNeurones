@@ -4,8 +4,9 @@
 #include <stdlib.h>
 
 struct Layer;
+struct FuncAndDerivative;
 
-// if weights 
+void runWeightAssignementTest();
 int testWeights(double **w, struct Layer *couche1, struct Layer *couche2);
 double** randWeights(int inDim, int outDim);
 double* randW(int dim);

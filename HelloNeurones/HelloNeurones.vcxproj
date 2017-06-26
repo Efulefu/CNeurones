@@ -146,11 +146,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HelloNeurones.c" />
+    <ClCompile Include="SerializeDeserializeNetwork.c" />
     <ClCompile Include="UnitTests.c" />
     <ClCompile Include="Utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HelloNeurones.h" />
+    <ClInclude Include="SerializeDeserializeNetwork.h" />
     <ClInclude Include="UnitTests.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

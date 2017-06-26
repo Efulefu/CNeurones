@@ -110,24 +110,13 @@ double leakyReluDerivated(double val) {
 }
 
 void connLayers(double **w, struct Layer* in, struct Layer* out) {
-	_connLayers(w, in, out, false);
-}
-
-struct Axon*** connLayersAlloc(double **w, struct Layer* in, struct Layer* out) {
-	return _connLayers(w, in, out, true);
-}
-struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool alloc) {
-	struct Axon ***res = NULL;
-	if (alloc) res = malloc(sizeof(struct Axon**) * in->dim);
 	// TODO: sanity check w array sizes vs in and out dimensions
 	for (int i = 0; i < in->dim; i++) {
-		if (alloc) res[i] = malloc(sizeof(struct Axon*) * out->dim);
 		for (int j = 0; j < out->dim; j++) {
 			struct Axon *conn = makeAxe(w[i][j], in->n[i], out->n[j]);
-			if (alloc) res[i][j] = conn;
 		}
+		free(w[i]);
 	}
-	return res;
 }
 
 struct Layer* makeLayer(int dim, double(*sum)(int, double*), struct FuncAndDerivative activation) {
@@ -223,7 +212,6 @@ void errorWidrowHoff(double *expected, struct Layer* lastLayer, double eta) {
 }
 
 void simpleRetroPropagate(struct Network *net, double* expected) {
-	// now we have an array of eta * ( t(j) - o(j) )
 	int errorVectorSize = -1;
 	int i = net->nbLayers - 1;
 	// Initial calculations for retropropagation
@@ -233,6 +221,7 @@ void simpleRetroPropagate(struct Network *net, double* expected) {
 	// build a temp vector out of the results values in the last layer neuron structs
 
 	net->error(expected, layer, net->eta);
+	// now we have an array of eta * ( t(j) - o(j) ) stored in layer->n[]->result
 	for (; j > -1; j--) {
 		struct Neuron* n = layer->n[j];
 		n->result = n->activation.derivative(n->result);

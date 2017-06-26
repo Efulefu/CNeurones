@@ -66,9 +66,6 @@ void errorWidrowHoff(double *expected, struct Layer* lastLayer, double eta);
 
 // handling functions
 void connLayers(double **w, struct Layer* in, struct Layer *out);
-struct Axon*** connLayersAlloc(double **w, struct Layer* in, struct Layer* out);
-struct Axon*** _connLayers(double **w, struct Layer* in, struct Layer* out, bool alloc);
-
 
 // other functions
 
@@ -78,3 +75,7 @@ double softplus(double);
 double derivatedSigmoid(double);
 double leakyRelu(double);
 double leakyReluDerivated(double);
+
+const struct FuncAndDerivative Sigmoid;
+const struct FuncAndDerivative SoftPlus;
+const struct FuncAndDerivative LeakyRelu;
