@@ -1,0 +1,42 @@
+Draft serialization réseau neurones:
+Syntaxe: <valeur>::<nombre de bits alloués>
+
+Note: la plupart des valeurs sont basées sur les sizeof(int) et sizeof(double)
+dans nos architectures modernes, donc 32 et 64 bits respectivement.
+Je doute qu'on en aura besoin, mais pour la version on reserve 0xff au cas
+où il faudrait la coder sur plusieurs octets à l'avenir.
+
+idObjet => correspond à un enum, pour l'instant:
+	LAYER == 0x00
+	NEURON == 0x01
+	
+idFonctionSomme => on n'a qu'une fonction de sommation pour l'instant, à déprecier?
+
+idFonctionActivation => correspond à un enum:
+	SIGMOID == 0x00
+	SOFTPLUS == 0x01
+	LEAKYRELU == 0x02
+	etc... lorsqu'on ajoutera d'autres paires fonction/dérivée
+
+Header:
+[version::8][nbCouches::32][eta::64]
+
+Couche:
+	[idObjet::8]
+	[nbNeurones::32]
+	Neurone:
+	[idObjet::8]
+	[idFonctionSomme::8]
+	[idFonctionActivation::8]
+	Entrées:
+		[nbInputs::32]
+		Note: Pour gérer toute forme possible du réseau, j'ai opté pour
+		un bitmask de la taille du nombre d'entrées (ou de sorties pour celles-ci),
+		bien évidemment au n-ième bit, '1' voudra dire une connection, '0' son absence.
+		[bitmaskConnections::variable + padding]
+		[array des poids::64 * nbInputs]
+	Sorties:
+		[nbOutputs::32]
+		[bitmaskConnections::variable + padding]
+		[array des poids::64 * nbOutputs]
+etc... jusqu'à la dernière couche.
