@@ -22,17 +22,9 @@ void saveNetwork(struct Network* net) {
 			serializeActivation(buffer, &offset, &(n->activation));
 			writeInt(buffer, &offset, n->nbIn);
 			// write pointer comparison logic to make the connection bitmask
-			// TODO: Redo the specification to get rid of the else clauses here, save some bytes
 
 			if (i > 0) // inputs
 				writeConnectBitmask(buffer, &offset, net->layers[i - 1], n->inputs, n->nbIn, BACKWARDS);
-			else
-				buffer[offset++] = 0x01;
-
-			if (i < nbLayers - 1) // outputs
-				writeConnectBitmask(buffer, &offset, net->layers[i + 1], n->outputs, n->nbOut, FORWARDS);
-			else
-				buffer[offset++] = 0x01;
 
 			// write weights array here in the for loop:
 			int k = 0;
@@ -40,6 +32,10 @@ void saveNetwork(struct Network* net) {
 				writeDouble(buffer, &offset, n->inputs[k]->w);
 			}
 			writeInt(buffer, &offset, n->nbOut);
+
+			if (i < nbLayers - 1) // outputs
+				writeConnectBitmask(buffer, &offset, net->layers[i + 1], n->outputs, n->nbOut, FORWARDS);
+
 			// reuse pointer comparison logic here
 			for (k = 0; k < n->nbOut; k++) {
 				writeDouble(buffer, &offset, n->outputs[k]->w);
@@ -52,29 +48,29 @@ void saveNetwork(struct Network* net) {
 
 void writeConnectBitmask(char* buf, int* offset, struct Layer* targetLayer, struct Axon** connections, int nbAxons, enum Direction dir) {
 	int nbTargets = targetLayer->dim;
-	int bitmaskBuffSize = sizeOfBitmask(nbTargets);
+	int bitOffset = 0;
+	buf[*offset] = 0;
 	for (int j = 0; j < nbAxons; j++) {
 		struct Axon* conn = connections[j];
 		for (int i = 0; i < nbTargets; i++) {
 			struct Neuron* targetNeur = targetLayer->n[i];
 			
-			if (dir == BACKWARDS && conn->in == targetLayer->n[i])
+			if ((dir == BACKWARDS && conn->in == targetLayer->n[i]) || (dir == FORWARDS && conn->out == targetLayer->n[i]))
 			{
 				// flip a bit here
+				buf[*offset] += 1 << bitOffset++;
 			}
 			else
 			{
-				// write a 0 here
+				// leave a 0 here
+				bitOffset++;
 			}
 
-			if (dir == FORWARDS && conn->out == targetLayer->n[i])
-			{
-				// flip a bit here
+			if (bitOffset % 8 == 0) {
+				bitOffset = 0;
+				buf[++*offset] = 0;
 			}
-			else
-			{
-				// write a 0 here
-			}
+			
 		}
 	}
 }
@@ -126,11 +122,12 @@ int sizeOfNetwork(struct Network* net) {
 			res += neurHeaderSize;
 			int nbIn = n->nbIn;
 			int nbOut = n->nbOut;
+
 			// calculate space for in and out bitmasks
 			if (i > 0) res += sizeOfBitmask(net->layers[i - 1]->dim);
-			else res += 1;
+
 			if (i < nbLayers - 1) res += sizeOfBitmask(net->layers[i + 1]->dim);
-			else res += 1;
+
 			res += nbIn * sizeof(double);
 			res += nbOut * sizeof(double);
 		}
