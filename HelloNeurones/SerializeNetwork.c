@@ -1,6 +1,6 @@
-#include "SerializeDeserializeNetwork.h"
+#include "SerializeNetwork.h"
 
-void saveNetwork(struct Network* net) {
+void saveNetwork(const char* filename, struct Network* net) {
 	char* buffer = malloc(sizeof(char) * sizeOfNetwork(net));
 	int offset = 0;
 
@@ -42,11 +42,35 @@ void saveNetwork(struct Network* net) {
 			}
 		}
 	}
-	// write to file here!
-	// add an EOF code?
+
+	if (offset > sizeOfNetwork) {
+		// TODO: Error utils!
+		printf("Serialization write buffer length got exceeded! Wtf?\n");
+		printf("The expected necessary buffer size was %d!\n", sizeOfNetwork);
+		printf("But we wrote into the buffer up to offset: %d\n", offset);
+		free(buffer);
+		return;
+	}
+
+	writeBufferToFile(filename, offset, buffer);
+	free(buffer);
 }
 
-void writeConnectBitmask(char* buf, int* offset, struct Layer* targetLayer, struct Axon** connections, int nbAxons, enum Direction dir) {
+void writeBufferToFile(const char* fname, const int buffc, const char* buffer) {
+	FILE* saveFile = fopen(fname, "wb+");
+	size_t written = fwrite(buffer, sizeof(char), (size_t)buffc, saveFile);
+	if (written != buffc)
+	{
+		// TODO: handle error
+	}
+	int err = fclose(saveFile);
+	if (err != 0)
+	{
+		// TODO: handle error
+	}
+}
+
+void writeConnectBitmask(char* buf, int* offset, const struct Layer* targetLayer, const struct Axon** connections, const int nbAxons, const enum Direction dir) {
 	int nbTargets = targetLayer->dim;
 	int bitOffset = 0;
 	buf[*offset] = 0;
@@ -90,19 +114,19 @@ void serializeActivation(char* buf, int* offset, struct FuncAndDerivative* f) {
 	}
 }
 
-void writeInt(char* buf, int* offset, int n) {
+void writeInt(char* buf, int* offset, const int n) {
 	buf[*offset++] = (n >> 24) & 0xff;
 	buf[*offset++] = (n >> 16) & 0xff;
 	buf[*offset++] = (n >> 8) & 0xff;
 	buf[*offset++] = n & 0xff;
 }
 
-void writeDouble(char* buf, int* offset, double d) {
-	memcpy(buf[*offset], &d, sizeof(double));
+void writeDouble(char* buf, int* offset, const double d) {
+	memcpy(&buf[*offset], &d, sizeof(double));
 	*offset += sizeof(double);
 }
 
-int sizeOfNetwork(struct Network* net) {
+int sizeOfNetwork(const struct Network* net) {
 	// header info 
 	// version in 8 bits, nbLayers 32 bits, eta 64 bits
 	int netHeaderSize = 13;
@@ -135,7 +159,7 @@ int sizeOfNetwork(struct Network* net) {
 	return res;
 }
 
-int sizeOfBitmask(int n) {
+int sizeOfBitmask(const int n) {
 	int roundUp = n % 8;
 	int res = roundUp ? n / 8 + 1 : n / 8;
 	return res;

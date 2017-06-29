@@ -27,7 +27,7 @@
     <ClCompile Include="Utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SerializeDeserializeNetwork.c">
+    <ClCompile Include="SerializeNetwork.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClInclude Include="Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SerializeDeserializeNetwork.h">
+    <ClInclude Include="SerializeNetwork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
